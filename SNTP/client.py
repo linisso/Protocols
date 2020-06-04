@@ -1,12 +1,18 @@
+
 import socket
 import time
 
-import ntplib
+from ntplib import NTPStats
 
-try:
-    ntp = ntplib.NTPClient().request('ntp2.stratum2.ru')
-    print('Real time: ' + time.ctime(ntp.tx_time))
-    ntp2 = ntplib.NTPClient().request('127.0.0.1', port=123)
-    print('False time: ' + time.ctime(ntp2.tx_time))
-except:
-    print('Server is not working')
+stats = NTPStats()
+
+sock = socket.socket()
+sock.connect(('localhost', 123))
+sock.send(str('HELLO').encode())
+
+data = sock.recv(1024)
+sock.close()
+
+print('Полученные данные: {}'.format(data))
+stats.from_data(data)
+print('Время полученное пользователем: {}'.format(time.ctime(stats.tx_time)))
