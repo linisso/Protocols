@@ -5,7 +5,7 @@ import time
 import dnslib
 
 # ns1.e1.ru
-FORWARDER = '212.193.163.6'
+FORWARDER = '8.8.8.8'
 
 
 def get_forwarder():
@@ -44,17 +44,19 @@ client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 while True:
     request, address = server.recvfrom(2048)
     x = dnslib.DNSRecord.parse(request)
-
     if cache.get((x.questions[0].qname, x.questions[0].qtype)):
         print('cache!')
         header = dnslib.DNSHeader(x.header.id, q=1, a=len(cache.get((x.questions[0].qname, x.questions[0].qtype))[0]))
         response = dnslib.DNSRecord(header, x.questions, cache.get((x.questions[0].qname, x.questions[0].qtype))[0])
+        print("Ответ отправлен из кэша\n")
         server.sendto(response.pack(), address)
     else:
         try:
             client.sendto(request, (forwarder, 53))
             response_from_dns, _ = client.recvfrom(2048)
             y = dnslib.DNSRecord.parse(response_from_dns)
+            print("Получен ответ ", y)
+            print("\n")
             cache[(y.questions[0].qname, y.questions[0].qtype)] = y.rr, time.time()
             if y.auth:
                 cache[(y.auth[0].rname, y.auth[0].rtype)] = y.auth, time.time()
